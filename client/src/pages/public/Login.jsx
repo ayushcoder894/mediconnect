@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ShieldCheck, Stethoscope, UserRound } from "lucide-react";
 import { homeFor, useAuth } from "../../auth/AuthContext";
+import { HOSTED } from "../../api/client";
 import { Button, ErrorNote, Field } from "../../components/ui";
 import AuthShell from "./AuthShell";
 
@@ -47,6 +48,9 @@ export default function Login() {
         </Field>
         <ErrorNote error={error} />
         <Button type="submit" size="lg" className="w-full" loading={loading}>Log in</Button>
+        {HOSTED && loading && (
+          <p className="text-center text-xs text-slate-500">Waking up the free server, this can take up to a minute…</p>
+        )}
       </form>
 
       <div className="mt-8 rounded-2xl border border-dashed border-brand-200 bg-brand-50/50 p-4">

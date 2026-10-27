@@ -1,5 +1,6 @@
 package com.mediconnect.auth;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.mediconnect.audit.AuditService;
 import com.mediconnect.common.ApiException;
 import com.mediconnect.doctor.Doctor;
@@ -66,8 +67,18 @@ public class AuthService {
     public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) {
     }
 
-    /** What the client needs to know about the logged-in user. */
-    public record MeDto(Long id, String email, String fullName, Role role, Long profileId, Boolean approved) {
+    /** What the client needs to know about the logged-in user. The token is only sent in cross-site mode. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record MeDto(Long id, String email, String fullName, Role role, Long profileId, Boolean approved,
+                        String token) {
+
+        MeDto(Long id, String email, String fullName, Role role, Long profileId, Boolean approved) {
+            this(id, email, fullName, role, profileId, approved, null);
+        }
+
+        public MeDto withToken(String token) {
+            return new MeDto(id, email, fullName, role, profileId, approved, token);
+        }
     }
 
     @Transactional

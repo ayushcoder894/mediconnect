@@ -57,17 +57,25 @@ public class AuthController {
 
     private ResponseEntity<AuthService.MeDto> withSession(User user, HttpStatus status) {
         String token = jwtService.issue(user);
+        AuthService.MeDto me = authService.toMe(user);
         return ResponseEntity.status(status)
                 .header(HttpHeaders.SET_COOKIE, cookie(token, jwtService.ttl()).toString())
-                .body(authService.toMe(user));
+                // Cross-site hosting (site and API on different domains): browsers such as
+                // Safari drop third-party cookies, so the client also gets the token to send
+                // as a bearer header. Same-origin deployments keep it cookie-only.
+                .body(props.jwt().crossSite() ? me.withToken(token) : me);
     }
 
-    /** httpOnly so scripts cannot read the token; SameSite=Strict so other sites cannot send it. */
+    /**
+     * httpOnly so scripts cannot read the token. SameSite=Strict on a single origin;
+     * cross-site hosting needs SameSite=None, which browsers only accept with Secure.
+     */
     private ResponseCookie cookie(String value, Duration maxAge) {
+        boolean crossSite = props.jwt().crossSite();
         return ResponseCookie.from(JwtAuthFilter.COOKIE_NAME, value)
                 .httpOnly(true)
-                .secure(props.jwt().secureCookie())
-                .sameSite("Strict")
+                .secure(crossSite || props.jwt().secureCookie())
+                .sameSite(crossSite ? "None" : "Strict")
                 .path("/")
                 .maxAge(maxAge)
                 .build();

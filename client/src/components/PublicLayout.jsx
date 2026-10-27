@@ -5,6 +5,7 @@ import { Menu, X } from "lucide-react";
 import Logo from "./Logo";
 import { Button } from "./ui";
 import { homeFor, useAuth } from "../auth/AuthContext";
+import { HOSTED } from "../api/client";
 
 const LINKS = [
   { to: "/doctors", label: "Find Doctors" },
@@ -18,6 +19,11 @@ export default function PublicLayout() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      {HOSTED && (
+        <div className="bg-slate-900 px-4 py-2 text-center text-xs text-slate-200">
+          Live demo on free hosting: the first request can take up to a minute while the server wakes up.
+        </div>
+      )}
       <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/80 backdrop-blur-lg">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           <Logo />

@@ -1,0 +1,49 @@
+# Render blueprint: the Java API and the Python AI service on Render's free plan.
+# The website itself is on GitHub Pages; MySQL is on Aiven and MongoDB on Atlas.
+# Values marked "sync: false" are entered in the Render dashboard (they are secrets).
+services:
+  - type: web
+    name: mediconnect-ai
+    runtime: docker
+    rootDir: ai-service
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+
+  - type: web
+    name: mediconnect-api
+    runtime: docker
+    rootDir: api
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: singapore
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: AI_SERVICE_URL
+        value: https://mediconnect-ai.onrender.com
+      - key: AI_TIMEOUT_SECONDS
+        value: "60"
+      - key: CORS_ORIGINS
+        value: https://ayushcoder894.github.io
+      - key: CROSS_SITE_AUTH
+        value: "true"
+      - key: SEED_DEMO_DATA
+        value: "true"
+      - key: TZ
+        value: Asia/Kolkata
+      - key: JAVA_TOOL_OPTIONS
+        value: -Duser.timezone=Asia/Kolkata -XX:MaxRAMPercentage=70 -XX:+UseSerialGC -Xss512k

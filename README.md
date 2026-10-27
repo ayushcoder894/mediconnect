@@ -4,6 +4,8 @@
 
 ![Java](https://img.shields.io/badge/Java-21-orange) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F) ![React](https://img.shields.io/badge/React-18-61DAFB) ![MySQL](https://img.shields.io/badge/MySQL-8.4-4479A1) ![MongoDB](https://img.shields.io/badge/MongoDB-7-47A248) ![FastAPI](https://img.shields.io/badge/FastAPI-Python%203.11-009688) ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED) ![CI](https://github.com/ayushcoder894/mediconnect/actions/workflows/ci.yml/badge.svg)
 
+**Live demo:** https://ayushcoder894.github.io/mediconnect/ (website on GitHub Pages, API on Render's free plan, so the first load can take about a minute). Log in with one click as a patient, doctor or admin. How it is deployed: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ![Landing page](docs/screenshots/home.png)
 
 ## What it does

@@ -12,7 +12,7 @@ public record AppProperties(
         Mail mail,
         boolean seedDemoData) {
 
-    public record Jwt(String secret, long ttlMinutes, boolean secureCookie) {}
+    public record Jwt(String secret, long ttlMinutes, boolean secureCookie, boolean crossSite) {}
 
     public record Cors(List<String> allowedOrigins) {}
 

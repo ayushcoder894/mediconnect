@@ -14,7 +14,7 @@ class SecurityUnitTest {
     private static final String SECRET = "dGVzdC1zZWNyZXQta2V5LXRoYXQtaXMtYXQtbGVhc3QtMzItYnl0ZXM=";
 
     private final JwtService jwt = new JwtService(new AppProperties(
-            new AppProperties.Jwt(SECRET, 60, false), new AppProperties.Cors(List.of()),
+            new AppProperties.Jwt(SECRET, 60, false, false),new AppProperties.Cors(List.of()),
             new AppProperties.AiService("http://localhost", 5), new AppProperties.Mail(false, ""), false));
 
     private User user() {

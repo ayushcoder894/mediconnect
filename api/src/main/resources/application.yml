@@ -51,6 +51,8 @@ app:
     secret: ${JWT_SECRET:bWVkaWNvbm5lY3QtbG9jYWwtZGV2ZWxvcG1lbnQtc2VjcmV0LWtleS0yMDI2}
     ttl-minutes: ${JWT_TTL_MINUTES:720}
     secure-cookie: ${COOKIE_SECURE:false}
+    # true when the website and the API are on different domains (GitHub Pages + Render)
+    cross-site: ${CROSS_SITE_AUTH:false}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}
   ai-service:

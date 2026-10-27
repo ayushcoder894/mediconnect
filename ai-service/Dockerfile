@@ -15,5 +15,6 @@ RUN useradd --create-home app
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=5 \
-  CMD curl -fs http://localhost:8000/health || exit 1
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+  CMD curl -fs http://localhost:${PORT:-8000}/health || exit 1
+# Hosting platforms such as Render pass the port to listen on in $PORT
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
