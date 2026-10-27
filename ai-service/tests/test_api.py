@@ -70,6 +70,25 @@ def test_insurance_question_returns_cited_sources(client):
     assert all(s["policy"] == "Activ One" for s in body["sources"])
 
 
+def test_vector_search_finds_paraphrased_questions(client):
+    from app.main import state
+
+    index = state["bot"].index
+    assert index.vectors is not None, "FAISS index should load"
+    # The question never says "maternity"; keyword search alone misses it
+    hits = index.search("Will my insurer pay if I have a baby?", k=3)
+    assert any("maternity" in c.text.lower() for c, _ in hits)
+
+
+def test_keyword_search_still_works_without_vectors():
+    from app.assistant import PolicyIndex
+
+    index = PolicyIndex(vectors=False)
+    assert index.mode == "keyword (TF-IDF)"
+    hits = index.search("room rent limit", "Care Supreme", k=2)
+    assert hits and all(c.policy == "Care Supreme" for c, _ in hits)
+
+
 def test_symptoms_suggest_a_specialist(client):
     body = client.post("/assistant/chat", json={"message": "I get knee pain when climbing stairs"}).json()
     assert body["suggested_specialization"] == "Orthopedics"

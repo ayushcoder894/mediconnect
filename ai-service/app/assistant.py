@@ -96,10 +96,18 @@ def clean_pdf_text(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-class PolicyIndex:
-    """TF-IDF index over chunked policy documents."""
+RRF_K = 60
+CANDIDATES = 60
 
-    def __init__(self, directory: Path = POLICY_DIR):
+
+class PolicyIndex:
+    """Hybrid search over chunked policy documents: TF-IDF keyword ranking plus a
+    FAISS vector index, merged with reciprocal rank fusion. Keywords keep exact
+    terms precise ("room rent", "AYUSH"); vectors catch questions worded differently
+    from the policy ("having a baby" finds the maternity clause). If the vector
+    index cannot load, search falls back to keywords alone."""
+
+    def __init__(self, directory: Path = POLICY_DIR, vectors: bool | None = None):
         self.chunks: list[Chunk] = []
         for file, name in POLICIES.items():
             path = directory / file
@@ -116,14 +124,38 @@ class PolicyIndex:
         self.matrix = self.vectorizer.fit_transform([c.text for c in self.chunks])
         log.info("Indexed %d chunks from %d policies", len(self.chunks), len(POLICIES))
 
-    def search(self, query: str, policy: str | None = None, k: int = 4) -> list[tuple[Chunk, float]]:
+        self.vectors = None
+        if vectors if vectors is not None else os.getenv("VECTOR_SEARCH", "on") != "off":
+            try:
+                from .vectorstore import VectorIndex
+
+                self.vectors = VectorIndex([c.text for c in self.chunks])
+            except Exception as e:  # missing package or model download failure: keywords still work
+                log.warning("Vector search unavailable, using keyword search only: %s", e)
+
+    @property
+    def mode(self) -> str:
+        return "hybrid (TF-IDF + FAISS)" if self.vectors else "keyword (TF-IDF)"
+
+    def _keyword_ranking(self, query: str) -> list[int]:
         scores = linear_kernel(self.vectorizer.transform([focus(query)]), self.matrix).ravel()
-        ranked = scores.argsort()[::-1]
+        ranked = scores.argsort()[::-1][:CANDIDATES]
+        return [int(i) for i in ranked if scores[i] > 0]
+
+    def search(self, query: str, policy: str | None = None, k: int = 4) -> list[tuple[Chunk, float]]:
+        # Reciprocal rank fusion: each passage scores 1 / (60 + rank) in every list it appears in.
+        # Ranks rather than raw scores, because TF-IDF and cosine scores are on different scales.
+        fused: dict[int, float] = {}
+        rankings = [self._keyword_ranking(query)]
+        if self.vectors:
+            rankings.append([i for i, _ in self.vectors.search(query, CANDIDATES)])
+        for ranking in rankings:
+            for rank, i in enumerate(ranking):
+                fused[i] = fused.get(i, 0.0) + 1.0 / (RRF_K + rank + 1)
+
         results = []
         seen_pages = set()
-        for i in ranked:
-            if scores[i] <= 0:
-                break
+        for i, score in sorted(fused.items(), key=lambda kv: kv[1], reverse=True):
             chunk = self.chunks[i]
             if policy and chunk.policy.lower() != policy.lower():
                 continue
@@ -131,7 +163,7 @@ class PolicyIndex:
             if (chunk.policy, chunk.page) in seen_pages:
                 continue
             seen_pages.add((chunk.policy, chunk.page))
-            results.append((chunk, float(scores[i])))
+            results.append((chunk, score))
             if len(results) == k:
                 break
         return results

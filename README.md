@@ -28,7 +28,7 @@ flowchart LR
     A -- Spring Data --> G[(MongoDB 7<br/>chat, audit, reviews)]
     A -- REST, timeout + fallback --> P[FastAPI AI service<br/>Python]
     P --> L[LightGBM diabetes model]
-    P --> R[MediBot: TF-IDF retrieval<br/>+ optional LLM tool-calling]
+    P --> R[MediBot: hybrid search<br/>TF-IDF + FAISS vectors<br/>+ optional LLM tool-calling]
     A -- scheduled worker --> E[SMTP via outbox]
 ```
 
@@ -37,7 +37,7 @@ flowchart LR
 | Frontend | React 18, Vite, Tailwind CSS, React Router, Recharts, html5-qrcode |
 | Backend | Java 21, Spring Boot 3.3, Spring Security (JWT), Spring Data JPA / Hibernate, Spring Data MongoDB, Bean Validation, Flyway, OpenPDF, ZXing, springdoc OpenAPI |
 | Data | MySQL 8.4 (relational core), MongoDB 7 (documents and logs) |
-| AI | FastAPI, scikit-learn, LightGBM, pandas, pypdf, LangChain + OpenAI (optional) |
+| AI | FastAPI, scikit-learn, LightGBM, pandas, pypdf, **FAISS vector index**, fastembed (BAAI bge-small embeddings, ONNX), LangChain + OpenAI (optional) |
 | DevOps | Docker, Docker Compose, GitHub Actions CI/CD, GitHub Container Registry |
 | Testing | JUnit 5, AssertJ, Testcontainers, pytest, Vitest, Testing Library |
 
@@ -52,6 +52,8 @@ flowchart LR
 **An honest ML integration.** The diabetes model is a LightGBM classifier (the best of XGBoost, CatBoost, LightGBM and Random Forest in [diabetes-prediction-ml](https://github.com/ayushcoder894/diabetes-prediction-ml)). Testing it showed the trees jump between the few HbA1c values in the training data (HbA1c 6.3% gave 93%, 6.5% gave 9%). The service therefore (1) averages predictions over a small grid of nearby inputs so risk rises smoothly with the lab values, and (2) never reports a band lower than the ADA guideline thresholds imply. Both behaviours are covered by tests.
 
 **Security.** JWT in an `httpOnly`, `SameSite=Strict` cookie (no token in JavaScript), bcrypt passwords, role checks with `@PreAuthorize`, ownership checks on every record (another patient's appointment returns `404`, not `403`), account lockout after 5 failed logins, the same error message for unknown email and wrong password, generic error bodies with details only in server logs, and an audit entry every time a doctor opens a patient record.
+
+**Hybrid retrieval with a vector index.** MediBot searches 1,072 passages from four policy PDFs two ways: TF-IDF keyword ranking and a FAISS vector index of 384-dimension BAAI bge-small embeddings computed locally with fastembed (no API key). The two rankings are merged with reciprocal rank fusion. Keywords keep exact terms precise; vectors catch paraphrases, so "Will my insurer pay if I have a baby?" finds the maternity clause that keyword search alone misses. The index is built at Docker build time and checked against a fingerprint of the passages, so a stale index is never used.
 
 **Graceful degradation.** The Java API calls the AI service with connect and read timeouts. If it is down, risk checks return a friendly `503` and the rest of the platform keeps working. MediBot works without an API key (document-search mode) and switches to LLM tool-calling when `OPENAI_API_KEY` is set.
 

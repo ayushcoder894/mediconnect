@@ -11,7 +11,12 @@ COPY app ./app
 COPY models ./models
 COPY data ./data
 
-RUN useradd --create-home app
+# Download the embedding model and build the FAISS index at build time,
+# so the container starts in seconds instead of embedding 1,000+ passages
+ENV FASTEMBED_CACHE_PATH=/app/models/embeddings
+RUN python -m app.vectorstore
+
+RUN useradd --create-home app && chown -R app /app/models /app/data
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=5 \

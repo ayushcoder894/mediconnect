@@ -9,3 +9,5 @@ pypdf==5.5.0
 langchain-core==0.3.62
 langchain-openai==0.3.18
 cryptography==44.0.2
+faiss-cpu==1.15.1
+fastembed==0.8.1

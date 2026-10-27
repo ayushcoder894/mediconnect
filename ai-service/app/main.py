@@ -78,6 +78,7 @@ def health() -> dict:
         "status": "ok",
         "model_version": MODEL_VERSION,
         "policy_chunks": len(bot.index.chunks),
+        "search": bot.index.mode,
         "llm_enabled": bot.llm_enabled,
     }
 
