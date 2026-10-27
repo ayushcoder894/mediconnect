@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: mediconnect-api
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/mediconnect?allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${DB_USER:mediconnect}
+    password: ${DB_PASSWORD:mediconnect}
+  jpa:
+    open-in-view: false
+    # Flyway owns the schema
+    hibernate:
+      ddl-auto: none
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://localhost:27017/mediconnect}
+      auto-index-creation: true
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${MAIL_SMTP_AUTH:true}
+      mail.smtp.starttls.enable: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  health:
+    mail:
+      enabled: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  jwt:
+    # Development default only. Production sets JWT_SECRET (base64, at least 32 bytes).
+    secret: ${JWT_SECRET:bWVkaWNvbm5lY3QtbG9jYWwtZGV2ZWxvcG1lbnQtc2VjcmV0LWtleS0yMDI2}
+    ttl-minutes: ${JWT_TTL_MINUTES:720}
+    secure-cookie: ${COOKIE_SECURE:false}
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}
+  ai-service:
+    base-url: ${AI_SERVICE_URL:http://localhost:8000}
+    timeout-seconds: ${AI_TIMEOUT_SECONDS:30}
+  mail:
+    enabled: ${MAIL_ENABLED:false}
+    from: ${MAIL_FROM:MediConnect <no-reply@mediconnect.dev>}
+  seed-demo-data: ${SEED_DEMO_DATA:true}
+
+logging:
+  level:
+    org.springframework.data.mongodb.core.index: warn

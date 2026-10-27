@@ -1,0 +1,80 @@
+# MediConnect: the whole platform with one command
+#   cp .env.example .env    (optional: add OPENAI_API_KEY / SMTP settings)
+#   docker compose up --build
+#   open http://localhost:3000
+
+name: mediconnect
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: mediconnect
+      MYSQL_USER: mediconnect
+      MYSQL_PASSWORD: ${DB_PASSWORD:-mediconnect}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-change-me-root}
+      TZ: ${TZ:-Asia/Kolkata}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ai-service:
+    build: ./ai-service
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+
+  api:
+    build: ./api
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/mediconnect?allowPublicKeyRetrieval=true&useSSL=false
+      DB_USER: mediconnect
+      DB_PASSWORD: ${DB_PASSWORD:-mediconnect}
+      MONGO_URI: mongodb://mongo:27017/mediconnect
+      AI_SERVICE_URL: http://ai-service:8000
+      JWT_SECRET: ${JWT_SECRET:-bWVkaWNvbm5lY3QtbG9jYWwtZGV2ZWxvcG1lbnQtc2VjcmV0LWtleS0yMDI2}
+      CORS_ORIGINS: http://localhost:3000
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+      MAIL_ENABLED: ${MAIL_ENABLED:-false}
+      MAIL_HOST: ${MAIL_HOST:-localhost}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      TZ: ${TZ:-Asia/Kolkata}
+      JAVA_TOOL_OPTIONS: -Duser.timezone=${TZ:-Asia/Kolkata}
+    ports:
+      - "8080:8080"
+
+  client:
+    build: ./client
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+
+volumes:
+  mysql-data:
+  mongo-data:

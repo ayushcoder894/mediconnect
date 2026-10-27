@@ -1,0 +1,28 @@
+# secrets
+.env
+
+# Java
+api/target/
+*.class
+.mvn/wrapper/maven-wrapper.jar
+
+# Node
+client/node_modules/
+client/dist/
+client/coverage/
+
+# Python
+ai-service/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# local screenshots and scratch
+/tmp/
